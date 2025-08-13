@@ -1,18 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import { PlusCircle } from '../components/icons/IconComponents';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { User } from '../types';
-import Spinner from '../components/ui/Spinner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Badge } from "@/components/ui/Badge";
 
-const getStatusBadge = (status: 'Ativo' | 'Inativo') => {
+const getStatusVariant = (status: 'Ativo' | 'Inativo'): "default" | "secondary" => {
     switch (status) {
         case 'Ativo':
-            return 'bg-green-100 text-green-800 border-green-200';
+            return 'default';
         case 'Inativo':
-            return 'bg-gray-100 text-gray-800 border-gray-200';
+            return 'secondary';
     }
 };
 
@@ -24,7 +25,7 @@ const Users: React.FC = () => {
         if (isLoading) {
             return (
                 <div className="flex justify-center items-center h-64">
-                    <Spinner className="w-8 h-8 text-primary" />
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
             );
         }
@@ -38,38 +39,34 @@ const Users: React.FC = () => {
         }
 
         return (
-            <div className="border rounded-lg">
-                <div className="relative w-full overflow-auto">
-                    <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b">
-                            <tr className="border-b transition-colors hover:bg-muted/50">
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nome / Razão Social</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">CPF / CNPJ</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">E-mail</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Telefone</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cargo</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="[&_tr:last-child]:border-0">
-                            {users.map((user: User) => (
-                                <tr key={user.id} className="border-b transition-colors hover:bg-muted/50">
-                                    <td className="p-4 align-middle font-medium">{user.nomeCompleto || user.razaoSocial}</td>
-                                    <td className="p-4 align-middle">{user.cpf || user.cnpj || '---'}</td>
-                                    <td className="p-4 align-middle">{user.email}</td>
-                                    <td className="p-4 align-middle">{user.phone || '---'}</td>
-                                    <td className="p-4 align-middle">{user.role}</td>
-                                    <td className="p-4 align-middle">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getStatusBadge(user.status)}`}>
-                                            {user.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Nome / Razão Social</TableHead>
+                        <TableHead>CPF / CNPJ</TableHead>
+                        <TableHead>E-mail</TableHead>
+                        <TableHead>Telefone</TableHead>
+                        <TableHead>Cargo</TableHead>
+                        <TableHead>Status</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {users.map((user: User) => (
+                        <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.nomeCompleto || user.razaoSocial}</TableCell>
+                            <TableCell>{user.cpf || user.cnpj || '---'}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.phone || '---'}</TableCell>
+                            <TableCell>{user.role}</TableCell>
+                            <TableCell>
+                                <Badge variant={getStatusVariant(user.status)}>
+                                    {user.status}
+                                </Badge>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         );
     };
     

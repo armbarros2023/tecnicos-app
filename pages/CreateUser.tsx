@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import Label from '../components/ui/Label';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
+import { Label } from '@/components/ui/Label';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { User, UserType } from '../types';
-import Select from '../components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Spinner from '../components/ui/Spinner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Loader2 } from 'lucide-react';
+import { toast } from "sonner";
 
 const formatters = {
     phone: (value: string) => value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d{4})/, '$1-$2').slice(0, 15),
@@ -43,7 +44,7 @@ const CreateUser: React.FC = () => {
         setFormData({ ...initialFormState, type });
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         const formatter = formatters[id as keyof typeof formatters];
         const formattedValue = formatter ? formatter(value) : value;
@@ -51,20 +52,24 @@ const CreateUser: React.FC = () => {
         setFormData(prev => ({ ...prev, [id]: formattedValue }));
     };
 
+    const handleSelectChange = (id: string, value: string) => {
+        setFormData(prev => ({ ...prev, [id]: value }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (userType === 'pessoaJuridica' && (!formData.razaoSocial || !formData.cnpj)) {
-            return alert('Razão Social e CNPJ são obrigatórios.');
+            return toast.error('Razão Social e CNPJ são obrigatórios.');
         }
         if (userType === 'pessoaFisica' && (!formData.nomeCompleto || !formData.cpf)) {
-            return alert('Nome Completo e CPF são obrigatórios.');
+            return toast.error('Nome Completo e CPF são obrigatórios.');
         }
         if (!formData.username || !formData.email || !formData.password) {
-            return alert('Nome de usuário, e-mail e Senha são obrigatórios.');
+            return toast.error('Nome de usuário, e-mail e Senha são obrigatórios.');
         }
         if (formData.password !== confirmPassword) {
-            alert('As senhas não coincidem.');
+            toast.error('As senhas não coincidem.');
             return;
         }
         
@@ -72,10 +77,10 @@ const CreateUser: React.FC = () => {
         try {
             // A senha é enviada para a API simulada, mas não é armazenada no estado global.
             await addUser(formData as Omit<User, 'id' | 'status'>);
-            alert('Usuário cadastrado com sucesso!');
+            toast.success('Usuário cadastrado com sucesso!');
             navigate('/users');
         } catch (error) {
-            alert(`Falha ao cadastrar usuário: ${(error as Error).message}`);
+            toast.error(`Falha ao cadastrar usuário: ${(error as Error).message}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -156,9 +161,12 @@ const CreateUser: React.FC = () => {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="role">Cargo *</Label>
-                                <Select id="role" value={formData.role} onChange={handleChange} required>
-                                    <option value="Técnico">Técnico</option>
-                                    <option value="Administrador">Administrador</option>
+                                <Select onValueChange={(value) => handleSelectChange('role', value)} value={formData.role} required>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Técnico">Técnico</SelectItem>
+                                        <SelectItem value="Administrador">Administrador</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
@@ -177,7 +185,7 @@ const CreateUser: React.FC = () => {
             <div className="fixed bottom-0 right-0 w-full lg:w-[calc(100%-16rem)] bg-card border-t border-border p-4 flex justify-end space-x-4">
                 <Button type="button" variant="ghost" onClick={() => navigate(-1)} disabled={isSubmitting}>Cancelar</Button>
                 <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Spinner className="w-4 h-4 mr-2"/>}
+                    {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin"/>}
                     {isSubmitting ? 'Salvando...' : 'Salvar Usuário'}
                 </Button>
             </div>

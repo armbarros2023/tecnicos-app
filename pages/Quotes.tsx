@@ -1,22 +1,23 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import { PlusCircle } from '../components/icons/IconComponents';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
 import { QuoteStatus, Quote } from '../types';
-import Spinner from '../components/ui/Spinner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { Badge } from "@/components/ui/Badge";
 
-const getStatusBadge = (status: QuoteStatus) => {
+const getStatusVariant = (status: QuoteStatus): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
         case QuoteStatus.Draft:
-            return 'bg-gray-100 text-gray-800 border-gray-200';
+            return 'secondary';
         case QuoteStatus.Sent:
-            return 'bg-blue-100 text-blue-800 border-blue-200';
+            return 'default';
         case QuoteStatus.Accepted:
-            return 'bg-green-100 text-green-800 border-green-200';
+            return 'outline';
         case QuoteStatus.Rejected:
-            return 'bg-red-100 text-red-800 border-red-200';
+            return 'destructive';
     }
 };
 
@@ -32,7 +33,7 @@ const Quotes: React.FC = () => {
         if (isLoading) {
             return (
                 <div className="flex justify-center items-center h-64">
-                    <Spinner className="w-8 h-8 text-primary" />
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
             );
         }
@@ -46,42 +47,38 @@ const Quotes: React.FC = () => {
         }
 
         return (
-            <div className="border rounded-lg">
-                <div className="relative w-full overflow-auto">
-                    <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b">
-                            <tr className="border-b transition-colors hover:bg-muted/50">
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nº</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cliente</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Data</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Validade</th>
-                                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Valor Total</th>
-                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Status</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="[&_tr:last-child]:border-0">
-                            {quotes.map((quote: Quote) => (
-                                <tr key={quote.id} className="border-b transition-colors hover:bg-muted/50">
-                                    <td className="p-4 align-middle font-medium">{quote.quoteNumber}</td>
-                                    <td className="p-4 align-middle">{quote.clientName}</td>
-                                    <td className="p-4 align-middle">{new Date(quote.quoteDate).toLocaleDateString()}</td>
-                                    <td className="p-4 align-middle">{new Date(quote.validUntil).toLocaleDateString()}</td>
-                                    <td className="p-4 align-middle text-right">{formatCurrency(quote.total)}</td>
-                                    <td className="p-4 align-middle text-center">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${getStatusBadge(quote.status)}`}>
-                                            {quote.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 align-middle">
-                                        <Button variant="outline" size="sm">Ver Detalhes</Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Nº</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Validade</TableHead>
+                        <TableHead className="text-right">Valor Total</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {quotes.map((quote: Quote) => (
+                        <TableRow key={quote.id}>
+                            <TableCell className="font-medium">{quote.quoteNumber}</TableCell>
+                            <TableCell>{quote.clientName}</TableCell>
+                            <TableCell>{new Date(quote.quoteDate).toLocaleDateString()}</TableCell>
+                            <TableCell>{new Date(quote.validUntil).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(quote.total)}</TableCell>
+                            <TableCell className="text-center">
+                                <Badge variant={getStatusVariant(quote.status)}>
+                                    {quote.status}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>
+                                <Button variant="outline" size="sm">Ver Detalhes</Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         );
     };
 

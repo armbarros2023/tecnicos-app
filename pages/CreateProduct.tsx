@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Label from '../components/ui/Label';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Label } from '@/components/ui/Label';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { Product } from '../types';
-import Select from '../components/ui/Select';
-import Textarea from '../components/ui/Textarea';
-import Spinner from '../components/ui/Spinner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { Loader2 } from 'lucide-react';
+import { toast } from "sonner";
 
 // --- Helper Functions for Currency ---
 const parseCurrency = (value: string): number => {
@@ -38,8 +39,12 @@ const CreateProduct: React.FC = () => {
     const [formData, setFormData] = useState(initialFormState);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
+        setFormData(prev => ({ ...prev, [id]: value }));
+    };
+
+    const handleSelectChange = (id: string, value: string) => {
         setFormData(prev => ({ ...prev, [id]: value }));
     };
     
@@ -56,16 +61,16 @@ const CreateProduct: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name || !formData.sku || !formData.sellingPrice) {
-            return alert('Nome, SKU e Preço de Venda são obrigatórios.');
+            return toast.error('Nome, SKU e Preço de Venda são obrigatórios.');
         }
         
         setIsSubmitting(true);
         try {
             await addProduct(formData);
-            alert('Produto cadastrado com sucesso!');
+            toast.success('Produto cadastrado com sucesso!');
             navigate('/products');
         } catch(error) {
-            alert(`Falha ao cadastrar produto: ${(error as Error).message}`);
+            toast.error(`Falha ao cadastrar produto: ${(error as Error).message}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -99,22 +104,28 @@ const CreateProduct: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="category">Categoria</Label>
-                                <Select id="category" value={formData.category} onChange={handleChange}>
-                                    <option value="Telefonia">Telefonia</option>
-                                    <option value="Redes">Redes</option>
-                                    <option value="Segurança">Segurança</option>
-                                    <option value="Manutenção">Manutenção</option>
-                                    <option value="Outros">Outros</option>
+                                <Select onValueChange={(value) => handleSelectChange('category', value)} value={formData.category}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Telefonia">Telefonia</SelectItem>
+                                        <SelectItem value="Redes">Redes</SelectItem>
+                                        <SelectItem value="Segurança">Segurança</SelectItem>
+                                        <SelectItem value="Manutenção">Manutenção</SelectItem>
+                                        <SelectItem value="Outros">Outros</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="unitOfMeasure">Unidade de Medida</Label>
-                                <Select id="unitOfMeasure" value={formData.unitOfMeasure} onChange={handleChange}>
-                                    <option value="unidade">Unidade</option>
-                                    <option value="caixa">Caixa</option>
-                                    <option value="peça">Peça</option>
-                                    <option value="metro">Metro</option>
-                                    <option value="outro">Outro</option>
+                                <Select onValueChange={(value) => handleSelectChange('unitOfMeasure', value)} value={formData.unitOfMeasure}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unidade">Unidade</SelectItem>
+                                        <SelectItem value="caixa">Caixa</SelectItem>
+                                        <SelectItem value="peça">Peça</SelectItem>
+                                        <SelectItem value="metro">Metro</SelectItem>
+                                        <SelectItem value="outro">Outro</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </div>
                         </div>
@@ -158,7 +169,7 @@ const CreateProduct: React.FC = () => {
             <div className="fixed bottom-0 right-0 w-full lg:w-[calc(100%-16rem)] bg-card border-t border-border p-4 flex justify-end space-x-4">
                 <Button type="button" variant="ghost" onClick={() => navigate(-1)} disabled={isSubmitting}>Cancelar</Button>
                 <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Spinner className="w-4 h-4 mr-2" />}
+                    {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {isSubmitting ? 'Salvando...' : 'Salvar Produto'}
                 </Button>
             </div>

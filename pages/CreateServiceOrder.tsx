@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Label from '../components/ui/Label';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Textarea from '../components/ui/Textarea';
-import Button from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Label } from '@/components/ui/Label';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { Button } from '@/components/ui/Button';
 import { parseServiceRequest } from '../services/geminiService';
-import { Sparkles } from '../components/icons/IconComponents';
-import Spinner from '../components/ui/Spinner';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { toast } from "sonner";
 
 const CreateServiceOrder: React.FC = () => {
     const { clients, addServiceOrder } = useAppContext();
@@ -26,22 +26,30 @@ const CreateServiceOrder: React.FC = () => {
     
     const handleGeminiParse = async () => {
         if (!geminiPrompt) {
-            alert("Por favor, descreva a solicitação primeiro.");
+            toast.error("Por favor, descreva a solicitação primeiro.");
             return;
         }
         setIsParsing(true);
-        const result = await parseServiceRequest(geminiPrompt);
-        if (result) {
-            setServiceType(result.serviceType);
-            setNotes(result.notes);
+        try {
+            const result = await parseServiceRequest(geminiPrompt);
+            if (result) {
+                setServiceType(result.serviceType);
+                setNotes(result.notes);
+                toast.success("Solicitação analisada com sucesso!");
+            } else {
+                throw new Error("Não foi possível extrair informações da solicitação.");
+            }
+        } catch (error) {
+            toast.error((error as Error).message);
+        } finally {
+            setIsParsing(false);
         }
-        setIsParsing(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!clientId || !serviceType || !location || !scheduledDate) {
-            alert("Por favor, preencha todos os campos obrigatórios.");
+            toast.error("Por favor, preencha todos os campos obrigatórios.");
             return;
         }
         setIsSubmitting(true);
@@ -53,17 +61,16 @@ const CreateServiceOrder: React.FC = () => {
                 scheduledDate: new Date(scheduledDate).toISOString(),
                 notes,
             });
-            alert('Ordem de Serviço criada com sucesso!');
+            toast.success('Ordem de Serviço criada com sucesso!');
             navigate('/service-orders');
         } catch (error) {
-            alert(`Falha ao criar Ordem de Serviço: ${(error as Error).message}`);
+            toast.error(`Falha ao criar Ordem de Serviço: ${(error as Error).message}`);
         } finally {
             setIsSubmitting(false);
         }
     };
     
-    const handleClientChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedClientId = e.target.value;
+    const handleClientChange = (selectedClientId: string) => {
         const selectedClient = clients.find(c => c.id === selectedClientId);
         setClientId(selectedClientId);
         if (selectedClient) {
@@ -101,7 +108,7 @@ const CreateServiceOrder: React.FC = () => {
                                     onChange={(e) => setGeminiPrompt(e.target.value)}
                                 />
                                 <Button type="button" onClick={handleGeminiParse} disabled={isParsing} className="self-start">
-                                    {isParsing ? <Spinner className="w-5 h-5 mr-2"/> : <Sparkles className="w-5 h-5 mr-2" />}
+                                    {isParsing ? <Loader2 className="w-5 h-5 mr-2 animate-spin"/> : <Sparkles className="w-5 h-5 mr-2" />}
                                     {isParsing ? 'Analisando...' : 'Analisar com IA'}
                                 </Button>
                             </div>
@@ -111,11 +118,16 @@ const CreateServiceOrder: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                             <div className="space-y-2">
                                 <Label htmlFor="client">Cliente</Label>
-                                <Select id="client" value={clientId} onChange={handleClientChange}>
-                                    {clients.length === 0 && <option>Carregando clientes...</option>}
-                                    {clients.map(client => (
-                                        <option key={client.id} value={client.id}>{client.razaoSocial || client.nomeCompleto}</option>
-                                    ))}
+                                <Select onValueChange={handleClientChange} value={clientId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione um cliente" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {clients.length === 0 && <SelectItem value="" disabled>Carregando clientes...</SelectItem>}
+                                        {clients.map(client => (
+                                            <SelectItem key={client.id} value={client.id}>{client.razaoSocial || client.nomeCompleto}</SelectItem>
+                                        ))}
+                                    </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
@@ -146,7 +158,7 @@ const CreateServiceOrder: React.FC = () => {
                     <div className="flex justify-end space-x-2 pt-4">
                         <Button type="button" variant="ghost" onClick={() => navigate(-1)} disabled={formDisabled}>Cancelar</Button>
                         <Button type="submit" disabled={formDisabled}>
-                            {isSubmitting && <Spinner className="w-4 h-4 mr-2"/>}
+                            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin"/>}
                             {isSubmitting ? 'Salvando...' : 'Salvar Ordem de Serviço'}
                         </Button>
                     </div>

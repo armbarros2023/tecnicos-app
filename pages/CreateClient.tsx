@@ -1,13 +1,15 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Label from '../components/ui/Label';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Label } from '@/components/ui/Label';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { Client, ClientType } from '../types';
-import Select from '../components/ui/Select';
-import Spinner from '../components/ui/Spinner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/RadioGroup";
+import { Loader2 } from 'lucide-react';
+import { toast } from "sonner";
 
 // --- Helper Functions for Formatting ---
 const formatters: Record<string, (value: string) => string> = {
@@ -49,7 +51,7 @@ const CreateClient: React.FC = () => {
         setFormData({ ...initialFormState, type });
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
         const formatter = formatters[id as keyof typeof formatters];
         const formattedValue = formatter ? formatter(value) : value;
@@ -57,9 +59,13 @@ const CreateClient: React.FC = () => {
         setFormData(prev => ({ ...prev, [id]: formattedValue }));
     };
 
+    const handleSelectChange = (id: string, value: string) => {
+        setFormData(prev => ({ ...prev, [id]: value }));
+    };
+
     const handleCepLookup = useCallback(async () => {
         const cep = (formData.zipCode || '').replace(/\D/g, '');
-        if (cep.length !== 8) return alert('Por favor, insira um CEP válido com 8 dígitos.');
+        if (cep.length !== 8) return toast.error('Por favor, insira um CEP válido com 8 dígitos.');
         
         setIsFetchingCep(true);
         try {
@@ -71,8 +77,9 @@ const CreateClient: React.FC = () => {
                 city: data.localidade || '', state: data.uf || '',
             }));
             document.getElementById('number')?.focus();
+            toast.success("Endereço encontrado com sucesso!");
         } catch (error) {
-            alert((error as Error).message || 'Falha ao buscar o CEP.');
+            toast.error((error as Error).message || 'Falha ao buscar o CEP.');
         } finally {
             setIsFetchingCep(false);
         }
@@ -80,21 +87,20 @@ const CreateClient: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Basic validation
         if (clientType === 'pessoaJuridica' && (!formData.razaoSocial || !formData.cnpj)) {
-            return alert('Razão Social e CNPJ são obrigatórios.');
+            return toast.error('Razão Social e CNPJ são obrigatórios.');
         }
         if (clientType === 'pessoaFisica' && (!formData.nomeCompleto || !formData.cpf)) {
-            return alert('Nome Completo e CPF são obrigatórios.');
+            return toast.error('Nome Completo e CPF são obrigatórios.');
         }
 
         setIsSubmitting(true);
         try {
             await addClient(formData as Omit<Client, 'id'>);
-            alert('Cliente cadastrado com sucesso!');
+            toast.success('Cliente cadastrado com sucesso!');
             navigate('/clients');
         } catch (error) {
-            alert(`Falha ao cadastrar cliente: ${(error as Error).message}`);
+            toast.error(`Falha ao cadastrar cliente: ${(error as Error).message}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -112,30 +118,35 @@ const CreateClient: React.FC = () => {
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     <div className="space-y-2 md:col-span-1">
                         <Label htmlFor="zipCode">CEP</Label>
-                        <Input id="zipCode" value={formData.zipCode} onChange={handleChange} placeholder="00000-000" />
+                        <Input id="zipCode" value={formData.zipCode || ''} onChange={handleChange} placeholder="00000-000" />
                     </div>
                     <div className="md:col-span-2">
                         <Button type="button" variant="outline" onClick={handleCepLookup} disabled={isFetchingCep}>
+                            {isFetchingCep ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                             {isFetchingCep ? 'Buscando...' : 'Buscar Endereço pelo CEP'}
                         </Button>
                     </div>
                 </div>
-                <Input id="street" value={formData.street} onChange={handleChange} placeholder="Logradouro (Rua, Avenida, etc.)" disabled={isFetchingCep} />
+                <Input id="street" value={formData.street || ''} onChange={handleChange} placeholder="Logradouro (Rua, Avenida, etc.)" disabled={isFetchingCep} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Input id="number" value={formData.number} onChange={handleChange} placeholder="Número" />
-                    <Input id="complement" value={formData.complement} onChange={handleChange} placeholder="Complemento" />
-                    <Input id="neighborhood" value={formData.neighborhood} onChange={handleChange} placeholder="Bairro" disabled={isFetchingCep} />
+                    <Input id="number" value={formData.number || ''} onChange={handleChange} placeholder="Número" />
+                    <Input id="complement" value={formData.complement || ''} onChange={handleChange} placeholder="Complemento" />
+                    <Input id="neighborhood" value={formData.neighborhood || ''} onChange={handleChange} placeholder="Bairro" disabled={isFetchingCep} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input id="city" value={formData.city} onChange={handleChange} placeholder="Cidade" disabled={isFetchingCep} />
-                    <Select id="state" value={formData.state} onChange={handleChange} disabled={isFetchingCep}>
-                        <option value="">Selecione um estado</option>
-                        {brazilianStates.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    <Input id="city" value={formData.city || ''} onChange={handleChange} placeholder="Cidade" disabled={isFetchingCep} />
+                    <Select onValueChange={(value) => handleSelectChange('state', value)} value={formData.state} disabled={isFetchingCep}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione um estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {brazilianStates.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                        </SelectContent>
                     </Select>
                 </div>
             </CardContent>
         </Card>
-    ), [formData, handleChange, handleCepLookup, isFetchingCep]);
+    ), [formData, handleChange, handleCepLookup, isFetchingCep, handleSelectChange]);
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 pb-20">
@@ -152,21 +163,21 @@ const CreateClient: React.FC = () => {
                         <Card>
                             <CardHeader><CardTitle>Dados da Empresa</CardTitle></CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Input id="razaoSocial" value={formData.razaoSocial} onChange={handleChange} required placeholder="Razão Social *" />
-                                <Input id="nomeFantasia" value={formData.nomeFantasia} onChange={handleChange} placeholder="Nome Fantasia" />
-                                <Input id="cnpj" value={formData.cnpj} onChange={handleChange} required placeholder="CNPJ *" />
-                                <Input id="inscricaoEstadual" value={formData.inscricaoEstadual} onChange={handleChange} placeholder="Inscrição Estadual" />
-                                <Input id="inscricaoMunicipal" value={formData.inscricaoMunicipal} onChange={handleChange} placeholder="Inscrição Municipal" />
-                                <Input id="site" value={formData.site} onChange={handleChange} placeholder="Site (ex: https://site.com)" />
+                                <Input id="razaoSocial" value={formData.razaoSocial || ''} onChange={handleChange} required placeholder="Razão Social *" />
+                                <Input id="nomeFantasia" value={formData.nomeFantasia || ''} onChange={handleChange} placeholder="Nome Fantasia" />
+                                <Input id="cnpj" value={formData.cnpj || ''} onChange={handleChange} required placeholder="CNPJ *" />
+                                <Input id="inscricaoEstadual" value={formData.inscricaoEstadual || ''} onChange={handleChange} placeholder="Inscrição Estadual" />
+                                <Input id="inscricaoMunicipal" value={formData.inscricaoMunicipal || ''} onChange={handleChange} placeholder="Inscrição Municipal" />
+                                <Input id="site" value={formData.site || ''} onChange={handleChange} placeholder="Site (ex: https://site.com)" />
                             </CardContent>
                         </Card>
                         {addressFields}
                         <Card>
                             <CardHeader><CardTitle>Contato</CardTitle></CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <Input id="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="Telefone" />
-                                <Input id="email" type="email" value={formData.email} onChange={handleChange} placeholder="E-mail" />
-                                <Input id="contactName" value={formData.contactName} onChange={handleChange} placeholder="Nome do Contato" />
+                                <Input id="phone" type="tel" value={formData.phone || ''} onChange={handleChange} placeholder="Telefone" />
+                                <Input id="email" type="email" value={formData.email || ''} onChange={handleChange} placeholder="E-mail" />
+                                <Input id="contactName" value={formData.contactName || ''} onChange={handleChange} placeholder="Nome do Contato" />
                             </CardContent>
                         </Card>
                     </div>
@@ -177,22 +188,22 @@ const CreateClient: React.FC = () => {
                         <Card>
                             <CardHeader><CardTitle>Dados Pessoais</CardTitle></CardHeader>
                             <CardContent className="space-y-4">
-                                <Input id="nomeCompleto" value={formData.nomeCompleto} onChange={handleChange} required placeholder="Nome Completo *" />
+                                <Input id="nomeCompleto" value={formData.nomeCompleto || ''} onChange={handleChange} required placeholder="Nome Completo *" />
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <Input id="dataNascimento" type="date" value={formData.dataNascimento} onChange={handleChange} placeholder="Data de Nascimento" />
-                                    <Input id="cpf" value={formData.cpf} onChange={handleChange} required placeholder="CPF *" />
-                                    <Input id="rg" value={formData.rg} onChange={handleChange} placeholder="RG" />
+                                    <Input id="dataNascimento" type="date" value={formData.dataNascimento || ''} onChange={handleChange} placeholder="Data de Nascimento" />
+                                    <Input id="cpf" value={formData.cpf || ''} onChange={handleChange} required placeholder="CPF *" />
+                                    <Input id="rg" value={formData.rg || ''} onChange={handleChange} placeholder="RG" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Sexo</Label>
-                                    <div className="flex items-center space-x-4">
+                                    <RadioGroup onValueChange={(value) => handleSelectChange('sexo', value)} value={formData.sexo} className="flex items-center space-x-4">
                                         {['Masculino', 'Feminino', 'Outro'].map(sexo => (
                                             <div key={sexo} className="flex items-center space-x-2">
-                                                <input type="radio" id={sexo} name="sexo" value={sexo} checked={formData.sexo === sexo} onChange={(e) => setFormData(p => ({...p, sexo: e.target.value as any}))} className="h-4 w-4 text-primary focus:ring-primary border-gray-300" />
+                                                <RadioGroupItem value={sexo} id={sexo} />
                                                 <Label htmlFor={sexo}>{sexo}</Label>
                                             </div>
                                         ))}
-                                    </div>
+                                    </RadioGroup>
                                 </div>
                             </CardContent>
                         </Card>
@@ -200,9 +211,9 @@ const CreateClient: React.FC = () => {
                         <Card>
                             <CardHeader><CardTitle>Contato</CardTitle></CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <Input id="telefoneCelular" type="tel" value={formData.telefoneCelular} onChange={handleChange} placeholder="Telefone Celular" />
-                                <Input id="telefoneResidencial" type="tel" value={formData.telefoneResidencial} onChange={handleChange} placeholder="Telefone Residencial" />
-                                <Input id="email" type="email" value={formData.email} onChange={handleChange} placeholder="E-mail" />
+                                <Input id="telefoneCelular" type="tel" value={formData.telefoneCelular || ''} onChange={handleChange} placeholder="Telefone Celular" />
+                                <Input id="telefoneResidencial" type="tel" value={formData.telefoneResidencial || ''} onChange={handleChange} placeholder="Telefone Residencial" />
+                                <Input id="email" type="email" value={formData.email || ''} onChange={handleChange} placeholder="E-mail" />
                             </CardContent>
                         </Card>
                     </div>
@@ -212,7 +223,7 @@ const CreateClient: React.FC = () => {
             <div className="fixed bottom-0 right-0 w-full lg:w-[calc(100%-16rem)] bg-card border-t border-border p-4 flex justify-end space-x-4">
                 <Button type="button" variant="ghost" onClick={() => navigate(-1)} disabled={formDisabled}>Cancelar</Button>
                 <Button type="submit" disabled={formDisabled}>
-                    {isSubmitting && <Spinner className="w-4 h-4 mr-2" />}
+                    {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}
                 </Button>
             </div>

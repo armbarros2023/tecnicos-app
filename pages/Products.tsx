@@ -1,11 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import { PlusCircle } from '../components/icons/IconComponents';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { Product } from '../types';
-import Spinner from '../components/ui/Spinner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 
 const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -19,7 +19,7 @@ const Products: React.FC = () => {
         if (isLoading) {
             return (
                 <div className="flex justify-center items-center h-64">
-                    <Spinner className="w-8 h-8 text-primary" />
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
             );
         }
@@ -33,32 +33,28 @@ const Products: React.FC = () => {
         }
 
         return (
-            <div className="border rounded-lg">
-                <div className="relative w-full overflow-auto">
-                    <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b">
-                            <tr className="border-b transition-colors hover:bg-muted/50">
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">SKU</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nome</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Categoria</th>
-                                <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Estoque</th>
-                                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Preço de Venda</th>
-                            </tr>
-                        </thead>
-                        <tbody className="[&_tr:last-child]:border-0">
-                            {products.map((product: Product) => (
-                                <tr key={product.id} className="border-b transition-colors hover:bg-muted/50">
-                                    <td className="p-4 align-middle font-medium">{product.sku}</td>
-                                    <td className="p-4 align-middle">{product.name}</td>
-                                    <td className="p-4 align-middle">{product.category}</td>
-                                    <td className="p-4 align-middle text-center">{`${product.quantityInStock} ${product.unitOfMeasure}(s)`}</td>
-                                    <td className="p-4 align-middle text-right">{formatCurrency(product.sellingPrice)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead className="text-center">Estoque</TableHead>
+                        <TableHead className="text-right">Preço de Venda</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {products.map((product: Product) => (
+                        <TableRow key={product.id}>
+                            <TableCell className="font-medium">{product.sku}</TableCell>
+                            <TableCell>{product.name}</TableCell>
+                            <TableCell>{product.category}</TableCell>
+                            <TableCell className="text-center">{`${product.quantityInStock} ${product.unitOfMeasure}(s)`}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(product.sellingPrice)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         );
     };
 

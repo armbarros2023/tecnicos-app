@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Label from '../components/ui/Label';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Textarea from '../components/ui/Textarea';
-import Button from '../components/ui/Button';
-import { PlusCircle, Trash2 } from '../components/icons/IconComponents';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Label } from '@/components/ui/Label';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { Button } from '@/components/ui/Button';
+import { PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { QuoteItem } from '../types';
-import Spinner from '../components/ui/Spinner';
+import { toast } from "sonner";
 
 const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -62,7 +62,7 @@ const CreateQuote: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!clientId || !validUntil || items.length === 0) {
-            alert("Por favor, selecione um cliente e adicione pelo menos um item ao orçamento.");
+            toast.error("Por favor, selecione um cliente e adicione pelo menos um item ao orçamento.");
             return;
         }
 
@@ -80,10 +80,10 @@ const CreateQuote: React.FC = () => {
                 commercialConditions
             });
 
-            alert('Orçamento criado com sucesso!');
+            toast.success('Orçamento criado com sucesso!');
             navigate('/quotes');
         } catch (error) {
-            alert(`Falha ao criar orçamento: ${(error as Error).message}`);
+            toast.error(`Falha ao criar orçamento: ${(error as Error).message}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -113,11 +113,15 @@ const CreateQuote: React.FC = () => {
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="client">Cliente *</Label>
-                            <Select id="client" value={clientId} onChange={e => setClientId(e.target.value)} required>
-                                <option value="" disabled>Selecione um cliente</option>
-                                {clients.map(client => (
-                                    <option key={client.id} value={client.id}>{client.razaoSocial || client.nomeCompleto}</option>
-                                ))}
+                            <Select onValueChange={setClientId} value={clientId} required>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um cliente" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {clients.map(client => (
+                                        <SelectItem key={client.id} value={client.id}>{client.razaoSocial || client.nomeCompleto}</SelectItem>
+                                    ))}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
@@ -225,7 +229,7 @@ const CreateQuote: React.FC = () => {
             <div className="fixed bottom-0 right-0 w-full lg:w-[calc(100%-16rem)] bg-card border-t border-border p-4 flex justify-end space-x-4">
                 <Button type="button" variant="ghost" onClick={() => navigate(-1)} disabled={isSubmitting}>Cancelar</Button>
                 <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Spinner className="w-4 h-4 mr-2" />}
+                    {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {isSubmitting ? 'Salvando...' : 'Salvar Orçamento'}
                 </Button>
             </div>

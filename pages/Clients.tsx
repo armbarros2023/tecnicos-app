@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../hooks/useAppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import { PlusCircle } from '../components/icons/IconComponents';
-import Spinner from '../components/ui/Spinner';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 
 const Clients: React.FC = () => {
     const { clients, isLoading } = useAppContext();
@@ -14,7 +14,7 @@ const Clients: React.FC = () => {
         if (isLoading) {
             return (
                 <div className="flex justify-center items-center h-64">
-                    <Spinner className="w-8 h-8 text-primary" />
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
             );
         }
@@ -28,32 +28,28 @@ const Clients: React.FC = () => {
         }
 
         return (
-            <div className="border rounded-lg">
-                <div className="relative w-full overflow-auto">
-                    <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b">
-                            <tr className="border-b transition-colors hover:bg-muted/50">
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nome / Razão Social</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">CPF / CNPJ</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cidade/UF</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Telefone Principal</th>
-                                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">E-mail</th>
-                            </tr>
-                        </thead>
-                        <tbody className="[&_tr:last-child]:border-0">
-                            {clients.map(client => (
-                                <tr key={client.id} className="border-b transition-colors hover:bg-muted/50">
-                                    <td className="p-4 align-middle font-medium">{client.razaoSocial || client.nomeCompleto}</td>
-                                    <td className="p-4 align-middle">{client.cnpj || client.cpf}</td>
-                                    <td className="p-4 align-middle">{`${client.city}/${client.state}`}</td>
-                                    <td className="p-4 align-middle">{client.phone || client.telefoneCelular}</td>
-                                    <td className="p-4 align-middle">{client.email}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Nome / Razão Social</TableHead>
+                        <TableHead>CPF / CNPJ</TableHead>
+                        <TableHead>Cidade/UF</TableHead>
+                        <TableHead>Telefone Principal</TableHead>
+                        <TableHead>E-mail</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {clients.map(client => (
+                        <TableRow key={client.id}>
+                            <TableCell className="font-medium">{client.razaoSocial || client.nomeCompleto}</TableCell>
+                            <TableCell>{client.cnpj || client.cpf}</TableCell>
+                            <TableCell>{`${client.city}/${client.state}`}</TableCell>
+                            <TableCell>{client.phone || client.telefoneCelular}</TableCell>
+                            <TableCell>{client.email}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         );
     };
     
